@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Calendar</title>
+</head>
+<body>
+<h1>Monthly Calendar</h1>
+<table border="1">
+    <tr>
+        <th>Day</th>
+        <th>Note</th>
+    </tr>
+    <tr th:each="day : ${monthData.days}">
+        <td th:text="${day.dayNumber}">1</td>
+        <td th:text="${day.note}">Sample Note</td>
+    </tr>
+</table>
+</body>
+</html>
+

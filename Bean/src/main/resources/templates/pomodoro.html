@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Pomodoro Timer</title>
+
+    <style>
+        /* Full page lofi background */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            animation: backgroundFade 20s infinite alternate;
+        }
+
+        @keyframes backgroundFade {
+            0% { filter: brightness(0.8); }
+            50% { filter: brightness(1); }
+            100% { filter: brightness(0.8); }
+        }
+
+        .container {
+            width: 500px;
+            padding: 25px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .time {
+            font-size: 80px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.6);
+        }
+
+        button {
+            padding: 10px 25px;
+            margin: 10px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: 1px solid #555;
+            cursor: pointer;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: rgba(0,0,0,0.6);
+        }
+
+        select {
+            padding: 8px;
+            font-size: 16px;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        #thought-box {
+            margin-top: 30px;
+            padding: 15px;
+            border-radius: 15px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(5px);
+            font-style: italic;
+            font-size: 16px;
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        #status-label, #completed-count {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Pomodoro Timer</h1>
+
+    <div id="time-display" class="time">25:00</div>
+
+    <select id="focus-select">
+        <option value="25">25 min Focus</option>
+        <option value="50">50 min Focus</option>
+    </select>
+
+    <select id="break-select">
+        <option value="5">5 min Break</option>
+        <option value="10">10 min Break</option>
+        <option value="15">15 min Break</option>
+    </select>
+
+    <br>
+
+    <button onclick="startTimer()">Start</button>
+    <button onclick="resetTimer()">End</button>
+
+    <h3 id="status-label">Status: Waiting</h3>
+
+    <h3>
+        Completed Today:
+        <span id="completed-count">0</span>
+    </h3>
+
+    <!-- Thought of the day box -->
+    <div id="thought-box">
+        <b>Thought of the day:</b> <span id="thought-text" th:text="${thoughtOfDay}"></span>
+    </div>
+</div>
+
+<script>
+    const userId = [[${userId}]];  // From backend
+    let isFocus = true;
+    let timer;
+    let secondsRemaining;
+    let currentSessionId = null;
+
+    // Load completed today
+    async function loadCompletedToday() {
+        const res = await fetch(`/pomodoro/countToday?userId=${userId}`);
+        const count = await res.text();
+        document.getElementById("completed-count").textContent = count;
+    }
+    loadCompletedToday();
+
+    // Timer functions
+    async function startTimer() {
+        clearInterval(timer);
+
+        if (isFocus) {
+            secondsRemaining = document.getElementById("focus-select").value * 60;
+            document.getElementById("status-label").innerText = "Status: Focus";
+
+            // start session in backend
+            const res = await fetch("/pomodoro/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `userId=${userId}&type=FOCUS`
+            });
+
+            const session = await res.json();
+            currentSessionId = session.id;
+
+        } else {
+            secondsRemaining = document.getElementById("break-select").value * 60;
+            document.getElementById("status-label").innerText = "Status: Break";
+        }
+
+        timer = setInterval(updateTimer, 1000);
+    }
+
+    async function updateTimer() {
+        let minutes = Math.floor(secondsRemaining / 60);
+        let seconds = secondsRemaining % 60;
+
+        document.getElementById("time-display").innerText =
+            `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+
+        secondsRemaining--;
+
+        if (secondsRemaining < 0) {
+            clearInterval(timer);
+
+            if (isFocus) {
+                // focus ended → end session
+                await fetch("/pomodoro/end", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "sessionId=" + currentSessionId
+                });
+                loadCompletedToday();
+
+                isFocus = false;
+                startTimer(); // Auto start break
+            } else {
+                isFocus = true;
+                startTimer(); // Auto start focus
+            }
+        }
+    }
+
+    function resetTimer() {
+        clearInterval(timer);
+        document.getElementById("time-display").innerText = "25:00";
+        document.getElementById("status-label").innerText = "Status: Waiting";
+        isFocus = true;
+    }
+
+    // ----------------------------
+    // Fetch lofi GIF from Giphy API
+    async function setLofiBackground() {
+        try {
+            const apiKey = "YOUR_GIPHY_API_KEY";  // Replace with your API key
+            const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=lofi+study&limit=1`);
+            const data = await res.json();
+            if (data.data.length > 0) {
+                const gifUrl = data.data[0].images.original.url;
+                document.body.style.backgroundImage = `url('${gifUrl}')`;
+            }
+        } catch(e) {
+            console.log("Failed to load lofi background", e);
+        }
+    }
+    setLofiBackground();
+
+</script>
+
+</body>
+</html>

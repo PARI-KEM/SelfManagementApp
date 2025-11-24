@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Tasks</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* LEFT SIDEBAR */
+        .sidebar {
+            width: 250px;
+            background: #ffffff;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding: 25px;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .menu-item {
+            font-size: 18px;
+            padding: 12px 6px;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background: #eee;
+        }
+
+        /* MAIN AREA */
+        .main {
+            flex-grow: 1;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #4A0FC5;
+            color: white;
+            padding: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .task-list {
+            padding: 30px;
+            overflow-y: auto;
+            height: calc(100vh - 100px);
+        }
+
+        .task-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+        }
+
+        .task-item input {
+            transform: scale(1.4);
+            margin-right: 15px;
+        }
+
+        .task-name {
+            font-size: 18px;
+        }
+
+        /* ADD BUTTON */
+        .add-btn {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            background: #5A00D4;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            color: white;
+            font-size: 28px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- LEFT SIDEBAR -->
+<div class="sidebar">
+    <h2>Bean</h2>
+    <div class="menu-item" onclick="location.href='/dashboard'">Dashboard</div>
+    <div class="menu-item" onclick="location.href='/profile'">Profile</div>
+    <div class="menu-item" onclick="location.href='/task'">Task</div>
+    <div class="menu-item" onclick="location.href='/notes'">Notes</div>
+    <div class="menu-item" onclick="location.href='/pomodoro'">Pomodoro</div>
+    <div class="menu-item" onclick="location.href='/calendar'">Calendar</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+    <div class="header">Your Tasks</div>
+
+    <div class="task-list">
+
+        <!-- SHOW ALL TASKS -->
+        <div th:each="task : ${tasks}" class="task-item">
+            <input type="checkbox"
+                   th:checked="${task.completed}"
+                   th:onchange="'window.location.href=\'/task/' + ${task.id} + '/toggle\''">
+            <div class="task-name" th:text="${task.title}"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ADD TASK BUTTON -->
+<button class="add-btn" onclick="location.href='/task/add'">+</button>
+
+</body>
+</html>

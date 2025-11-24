@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+<div class="flex">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow h-screen p-6">
+        <h2 class="text-2xl font-bold mb-6">Bean</h2>
+
+        <nav class="space-y-3">
+            <a href="/dashboard" class="block p-2 rounded bg-gray-200">Dashboard</a>
+            <a href="/profile" class="block p-2">Profile</a>
+            <a href="/task" class="block p-2">Task</a>
+            <a href="/notes" class="block p-2">Notes</a>
+            <a href="/pomodoro" class="block p-2">Pomodoro</a>
+            <a href="/calendar" class="block p-2">Calendar</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+
+        <!-- Top Bar -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Dashboard</h1>
+            <div class="text-gray-600">Hello User 👋</div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-3 gap-6 mb-10">
+
+            <div class="bg-white shadow p-6 rounded-lg">
+                <h3 class="text-gray-500">Notes</h3>
+                <p class="text-2xl font-bold" th:text="${noteCount}">0</p>
+            </div>
+
+            <div class="bg-white shadow p-6 rounded-lg">
+                <h3 class="text-gray-500">Today’s Pomodoros</h3>
+                <p class="text-2xl font-bold" th:text="${pomodoroCount}">0</p>
+            </div>
+
+        </div>
+
+        <!-- Today Tasks -->
+        <div>
+            <h2 class="text-xl font-semibold mb-4">Today's Tasks</h2>
+            <div class="bg-white shadow rounded p-4 space-y-3">
+
+                <div th:if="${todayTasks != null and #lists.isEmpty(todayTasks) == false}">
+                    <div th:each="t : ${todayTasks}" class="p-3 border rounded">
+                        <p class="font-medium" th:text="${t.title}">Task Title</p>
+                        <p class="text-sm text-gray-500" th:text="${t.category?.name}">No Category</p>
+                    </div>
+                </div>
+
+                <p th:if="${todayTasks == null or #lists.isEmpty(todayTasks)}" class="text-gray-400">
+                    No tasks today 🎉
+                </p>
+
+            </div>
+        </div>
+
+    </main>
+</div>
+
+</body>
+</html>
