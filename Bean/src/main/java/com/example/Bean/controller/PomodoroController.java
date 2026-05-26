@@ -2,12 +2,15 @@ package com.example.Bean.controller;
 
 import com.example.Bean.enums.PomodoroType;
 import com.example.Bean.model.PomodoroSession;
+import com.example.Bean.security.CurrentUser;
 import com.example.Bean.service.PomodoroService;
-import com.example.Bean.controller.QuoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/pomodoro")
@@ -17,48 +20,51 @@ public class PomodoroController {
     private QuoteService quoteService;
 
     private final PomodoroService pomodoroService;
+    private final CurrentUser currentUser;
 
-    public PomodoroController(PomodoroService pomodoroService) {
+    public PomodoroController(PomodoroService pomodoroService, CurrentUser currentUser) {
         this.pomodoroService = pomodoroService;
+        this.currentUser = currentUser;
     }
 
-    // -------------------- START SESSION --------------------
     @PostMapping("/start")
     @ResponseBody
-    public PomodoroSession startSession(
-            @RequestParam Long userId,
+    public Map<String, Object> startSession(
             @RequestParam PomodoroType type,
             @RequestParam(required = false) Long taskId
     ) {
-        return pomodoroService.startSession(userId, type, taskId);
+        Long userId = currentUser.requireId();
+        PomodoroSession s = pomodoroService.startSession(userId, type, taskId);
+        Map<String, Object> out = new HashMap<>();
+        out.put("id", s.getId());
+        out.put("type", s.getType());
+        out.put("startTime", s.getStartTime());
+        return out;
     }
 
-    // -------------------- END SESSION --------------------
     @PostMapping("/end")
     @ResponseBody
-    public PomodoroSession endSession(@RequestParam Long sessionId) {
-        return pomodoroService.endSession(sessionId);
+    public Map<String, Object> endSession(@RequestParam Long sessionId) {
+        PomodoroSession s = pomodoroService.endSession(sessionId);
+        Map<String, Object> out = new HashMap<>();
+        out.put("id", s.getId());
+        out.put("durationSeconds", s.getDurationSeconds());
+        out.put("isCompleted", s.getIsCompleted());
+        return out;
     }
 
-    // -------------------- COUNT TODAY'S SESSIONS --------------------
     @GetMapping("/countToday")
     @ResponseBody
-    public int countToday(@RequestParam Long userId) {
-        return pomodoroService.countTodayPomodoros(userId);
+    public int countToday() {
+        return pomodoroService.countTodayPomodoros(currentUser.requireId());
     }
 
-    // -------------------- POMODORO PAGE --------------------
-    @GetMapping("")
+    @GetMapping({"", "/"})
     public String pomodoroPage(Model model) {
-
-        // Thought of the day API
-        String thought = quoteService.getThoughtOfTheDay();
-        model.addAttribute("thoughtOfDay", thought);
-
-        // TODO: Replace with actual logged-in user from session
-        Long loggedUserId = 1L;
-        model.addAttribute("userId", loggedUserId);
-
+        Long userId = currentUser.requireId();
+        model.addAttribute("thoughtOfDay", quoteService.getThoughtOfTheDay());
+        model.addAttribute("userId", userId);
+        model.addAttribute("todayCount", pomodoroService.countTodayPomodoros(userId));
         return "pomodoro";
     }
 }

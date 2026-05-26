@@ -24,7 +24,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                 @Param("date") LocalDate date);
 
     @Query("""
-           SELECT t FROM Task t 
+           SELECT t FROM Task t
            WHERE t.user.id = :userId
            AND (:status IS NULL OR t.status = :status)
            AND (:priority IS NULL OR t.priority = :priority)
@@ -36,9 +36,23 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                            @Param("keyword") String keyword);
 
     int countByUser_IdAndStatus(Long userId, TaskStatus status);
+
     @Query("SELECT t FROM Task t WHERE t.user.id = :userId AND t.dueDate >= :start AND t.dueDate < :end")
     List<Task> findTodayTasks(@Param("userId") Long userId,
                               @Param("start") OffsetDateTime start,
                               @Param("end") OffsetDateTime end);
+
     List<Task> findByUserIdAndDueDate(Long userId, LocalDate today);
+
+    // ---- Aggregations for dashboard reports ----
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.completed = true AND t.updatedAt >= :start AND t.updatedAt < :end")
+    int countCompletedBetween(@Param("userId") Long userId,
+                              @Param("start") OffsetDateTime start,
+                              @Param("end") OffsetDateTime end);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.createdAt >= :start AND t.createdAt < :end")
+    int countCreatedBetween(@Param("userId") Long userId,
+                            @Param("start") OffsetDateTime start,
+                            @Param("end") OffsetDateTime end);
 }

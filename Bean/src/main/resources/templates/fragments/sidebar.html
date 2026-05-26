@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="sidebar(active)" class="sidebar">
+    <div class="logo">Bean</div>
+    <div class="tagline">stay cute • stay focused</div>
+
+    <a th:href="@{/dashboard}" th:classappend="${active == 'dashboard'} ? 'active'">
+        <span>🏠 Dashboard</span>
+    </a>
+    <a th:href="@{/task}" th:classappend="${active == 'tasks'} ? 'active'">
+        <span>✅ Tasks</span>
+    </a>
+    <a th:href="@{/notes}" th:classappend="${active == 'notes'} ? 'active'">
+        <span>📝 Notes</span>
+    </a>
+    <a th:href="@{/pomodoro}" th:classappend="${active == 'pomodoro'} ? 'active'">
+        <span>🍅 Pomodoro</span>
+    </a>
+    <a th:href="@{/calendar}" th:classappend="${active == 'calendar'} ? 'active'">
+        <span>📅 Calendar</span>
+    </a>
+
+    <div class="spacer"></div>
+
+    <a th:href="@{/auth/logout}">
+        <span>👋 Logout</span>
+    </a>
+</div>
+
+</body>
+</html>

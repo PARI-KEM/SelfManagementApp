@@ -22,7 +22,7 @@ public class CalendarController {
 
         MonthData monthData = new MonthData(days);
         model.addAttribute("monthData", monthData);
-        return "calendar";
+        return "calender"; // template filename
     }
 }
 

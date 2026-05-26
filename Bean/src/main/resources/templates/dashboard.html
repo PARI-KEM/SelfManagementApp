@@ -1,73 +1,197 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>Dashboard • Bean</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
+<body>
+<div class="app-layout">
 
-<body class="bg-gray-100">
+    <div th:replace="~{fragments/sidebar :: sidebar('dashboard')}"></div>
 
-<div class="flex">
+    <div class="main-content">
 
-    <!-- Sidebar -->
-    <aside class="w-64 bg-white shadow h-screen p-6">
-        <h2 class="text-2xl font-bold mb-6">Bean</h2>
-
-        <nav class="space-y-3">
-            <a href="/dashboard" class="block p-2 rounded bg-gray-200">Dashboard</a>
-            <a href="/profile" class="block p-2">Profile</a>
-            <a href="/task" class="block p-2">Task</a>
-            <a href="/notes" class="block p-2">Notes</a>
-            <a href="/pomodoro" class="block p-2">Pomodoro</a>
-            <a href="/calendar" class="block p-2">Calendar</a>
-        </nav>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="flex-1 p-8">
-
-        <!-- Top Bar -->
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold">Dashboard</h1>
-            <div class="text-gray-600">Hello User 👋</div>
-        </div>
-
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-3 gap-6 mb-10">
-
-            <div class="bg-white shadow p-6 rounded-lg">
-                <h3 class="text-gray-500">Notes</h3>
-                <p class="text-2xl font-bold" th:text="${noteCount}">0</p>
+        <div class="dashboard-header">
+            <div>
+                <h1 class="page-title">Hi there 💖</h1>
+                <p class="page-sub">Here's how you're doing today.</p>
             </div>
-
-            <div class="bg-white shadow p-6 rounded-lg">
-                <h3 class="text-gray-500">Today’s Pomodoros</h3>
-                <p class="text-2xl font-bold" th:text="${pomodoroCount}">0</p>
-            </div>
-
-        </div>
-
-        <!-- Today Tasks -->
-        <div>
-            <h2 class="text-xl font-semibold mb-4">Today's Tasks</h2>
-            <div class="bg-white shadow rounded p-4 space-y-3">
-
-                <div th:if="${todayTasks != null and #lists.isEmpty(todayTasks) == false}">
-                    <div th:each="t : ${todayTasks}" class="p-3 border rounded">
-                        <p class="font-medium" th:text="${t.title}">Task Title</p>
-                        <p class="text-sm text-gray-500" th:text="${t.category?.name}">No Category</p>
-                    </div>
-                </div>
-
-                <p th:if="${todayTasks == null or #lists.isEmpty(todayTasks)}" class="text-gray-400">
-                    No tasks today 🎉
-                </p>
-
+            <div>
+                <a class="btn btn-outline" id="btn-pdf" href="/dashboard/report?range=weekly">
+                    📄 Download report
+                </a>
             </div>
         </div>
 
-    </main>
+        <!-- TODAY tiles -->
+        <div class="grid grid-4" style="margin-bottom:28px;">
+            <div class="stat-tile">
+                <div class="icon">✅</div>
+                <div class="value" th:text="${tasksCompletedToday}">0</div>
+                <div class="label">Tasks completed</div>
+            </div>
+            <div class="stat-tile">
+                <div class="icon">🍅</div>
+                <div class="value" th:text="${focusMinutesToday}">0</div>
+                <div class="label">Focus minutes</div>
+            </div>
+            <div class="stat-tile">
+                <div class="icon">📝</div>
+                <div class="value" th:text="${notesToday}">0</div>
+                <div class="label">Notes today</div>
+            </div>
+            <div class="stat-tile">
+                <div class="icon">➕</div>
+                <div class="value" th:text="${tasksCreatedToday}">0</div>
+                <div class="label">Tasks added</div>
+            </div>
+        </div>
+
+        <!-- Range tabs -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+            <h2 style="margin:0;color:var(--pink-600);">📊 Productivity report</h2>
+            <div class="tab-bar">
+                <button class="tab-btn active" data-range="daily">Daily</button>
+                <button class="tab-btn"        data-range="weekly">Weekly</button>
+                <button class="tab-btn"        data-range="monthly">Monthly</button>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="chart-card">
+                <div class="card-title">Tasks completed</div>
+                <canvas id="chart-tasks"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="card-title">Focus minutes</div>
+                <canvas id="chart-focus"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="card-title">Notes created</div>
+                <canvas id="chart-notes"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="card-title">Overview</div>
+                <canvas id="chart-overview"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
 
+<script>
+const PINK_400 = '#ff6b9d';
+const PINK_300 = '#ff8fb1';
+const PINK_200 = '#ffb6c8';
+const PINK_500 = '#e75a8a';
+
+Chart.defaults.font.family = 'Quicksand, sans-serif';
+Chart.defaults.color = '#8a6a78';
+
+let charts = {};
+let currentRange = 'daily';
+
+function makeBar(ctx, label, color) {
+    return new Chart(ctx, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label, data: [], backgroundColor: color, borderRadius: 8 }] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#ffe6ef' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function makeLine(ctx, label, color) {
+    return new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{
+            label, data: [], borderColor: color, backgroundColor: color + '33',
+            fill: true, tension: 0.4, pointBackgroundColor: color, pointRadius: 5
+        }]},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#ffe6ef' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function makeMulti(ctx) {
+    return new Chart(ctx, {
+        type: 'bar',
+        data: { labels: [], datasets: [
+            { label: 'Tasks',  data: [], backgroundColor: PINK_400, borderRadius: 6 },
+            { label: 'Focus (min)', data: [], backgroundColor: PINK_300, borderRadius: 6 },
+            { label: 'Notes',  data: [], backgroundColor: PINK_200, borderRadius: 6 }
+        ]},
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#ffe6ef' } },
+                x: { grid: { display: false } }
+            }
+        }
+    });
+}
+
+function initCharts() {
+    charts.tasks    = makeBar (document.getElementById('chart-tasks').getContext('2d'),   'Tasks completed', PINK_400);
+    charts.focus    = makeLine(document.getElementById('chart-focus').getContext('2d'),   'Focus minutes',   PINK_500);
+    charts.notes    = makeBar (document.getElementById('chart-notes').getContext('2d'),   'Notes',           PINK_300);
+    charts.overview = makeMulti(document.getElementById('chart-overview').getContext('2d'));
+}
+
+async function loadRange(range) {
+    currentRange = range;
+    const res = await fetch('/dashboard/api/' + range);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    charts.tasks.data.labels = data.labels;
+    charts.tasks.data.datasets[0].data = data.completedTasks;
+    charts.tasks.update();
+
+    charts.focus.data.labels = data.labels;
+    charts.focus.data.datasets[0].data = data.focusMinutes;
+    charts.focus.update();
+
+    charts.notes.data.labels = data.labels;
+    charts.notes.data.datasets[0].data = data.notes;
+    charts.notes.update();
+
+    charts.overview.data.labels = data.labels;
+    charts.overview.data.datasets[0].data = data.completedTasks;
+    charts.overview.data.datasets[1].data = data.focusMinutes;
+    charts.overview.data.datasets[2].data = data.notes;
+    charts.overview.update();
+
+    // update PDF link
+    document.getElementById('btn-pdf').href = '/dashboard/report?range=' + range;
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadRange(btn.dataset.range);
+    });
+});
+
+initCharts();
+loadRange('daily');
+</script>
 </body>
 </html>

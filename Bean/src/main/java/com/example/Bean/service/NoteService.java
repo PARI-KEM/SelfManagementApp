@@ -14,4 +14,8 @@ public interface NoteService {
     void deleteNoteById(Long id);
 
     void updateNoteContent(Long id, String content);
+
+    void togglePin(Long id);
+
+    void updateColor(Long id, String color);
 }

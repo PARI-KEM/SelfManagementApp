@@ -1,20 +1,90 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Calendar</title>
+    <meta charset="UTF-8">
+    <title>Calendar • Bean</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-<h1>Monthly Calendar</h1>
-<table border="1">
-    <tr>
-        <th>Day</th>
-        <th>Note</th>
-    </tr>
-    <tr th:each="day : ${monthData.days}">
-        <td th:text="${day.dayNumber}">1</td>
-        <td th:text="${day.note}">Sample Note</td>
-    </tr>
-</table>
+<div class="app-layout">
+
+    <div th:replace="~{fragments/sidebar :: sidebar('calendar')}"></div>
+
+    <div class="main-content">
+        <h1 class="page-title">Calendar 📅</h1>
+        <p class="page-sub">Plan your month, day by day.</p>
+
+        <div class="calendar-wrap">
+            <div class="calendar-nav">
+                <button class="btn btn-ghost" onclick="prevMonth()">←</button>
+                <h2 id="monthYear"></h2>
+                <button class="btn btn-ghost" onclick="nextMonth()">→</button>
+            </div>
+            <table>
+                <thead>
+                <tr>
+                    <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th>
+                    <th>Thu</th><th>Fri</th><th>Sat</th>
+                </tr>
+                </thead>
+                <tbody id="calendarBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let today = new Date();
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+
+    const monthNames = ["January","February","March","April","May","June",
+                        "July","August","September","October","November","December"];
+
+    function renderCalendar(year, month) {
+        const calendarBody = document.getElementById('calendarBody');
+        calendarBody.innerHTML = '';
+
+        document.getElementById('monthYear').textContent = `${monthNames[month]} ${year}`;
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const lastDate = new Date(year, month + 1, 0).getDate();
+
+        let date = 1;
+        for (let i = 0; i < 6; i++) {
+            const row = document.createElement('tr');
+            for (let j = 0; j < 7; j++) {
+                const cell = document.createElement('td');
+                if (i === 0 && j < firstDay) {
+                    cell.textContent = '';
+                } else if (date > lastDate) {
+                    cell.textContent = '';
+                } else {
+                    cell.textContent = date;
+                    if (date === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                        cell.classList.add('today');
+                    }
+                    date++;
+                }
+                row.appendChild(cell);
+            }
+            calendarBody.appendChild(row);
+        }
+    }
+
+    function nextMonth() {
+        currentMonth++;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        renderCalendar(currentYear, currentMonth);
+    }
+
+    function prevMonth() {
+        currentMonth--;
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        renderCalendar(currentYear, currentMonth);
+    }
+
+    renderCalendar(currentYear, currentMonth);
+</script>
 </body>
 </html>
-

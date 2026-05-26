@@ -1,71 +1,60 @@
 package com.example.Bean.controller;
 
-
+import com.example.Bean.dto.RegisterRequest;
 import com.example.Bean.model.User;
 import com.example.Bean.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
+@RequestMapping("/auth")
 public class AuthController {
+
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @GetMapping("/")
-    public String home() {
-        return "login"; // or homepage
-    }
-
+    // GET /auth/login — Spring Security handles the POST via formLogin.
     @GetMapping("/login")
-    public String loginPage(){
+    public String showLoginForm() {
         return "login";
     }
 
-
-
-    @PostMapping("/register")
-    public  String register(@RequestParam String name,
-                            @RequestParam String email,
-                            @RequestParam String  password,
-                            Model model){
-        if(userRepository.existsByEmail(email)){
-            model.addAttribute("error","Email already Registered");
-            return "register";
-
-        }
-        User user=new User();
-        user.setName(name);
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setTimezone("Asia/Kolkata");
-
-        userRepository.save(user);
-        return "redirect:/login?success";
-    }
     @GetMapping("/register")
-    public String showRegistrationForm(Model model) {
-        model.addAttribute("user", new User());
+    public String showRegisterForm(Model model) {
+        model.addAttribute("registerRequest", new RegisterRequest());
         return "register";
     }
 
-    @PostMapping("/login")
-    public String login(@RequestParam String email,@RequestParam String
-                        password,Model model){
-        return userRepository.findByEmail(email).
-                filter(user-> passwordEncoder.matches(password, user.getPasswordHash())).
-                map(user->"redirect:/dashboard").
-                orElseGet(()-> {
-                    model.addAttribute("error", "Invalid Email or Password");
-                    return "login";
-                });
+    @PostMapping("/register")
+    public String register(@ModelAttribute RegisterRequest request, Model model) {
 
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            model.addAttribute("error", "Password is required");
+            return "register";
+        }
+        if (request.getEmail() == null || request.getEmail().isEmpty()) {
+            model.addAttribute("error", "Email is required");
+            return "register";
+        }
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            model.addAttribute("error", "Email already registered");
+            return "register";
+        }
+
+        User user = new User();
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+
+        return "redirect:/auth/login?registered";
     }
+
+    // Logout is handled by Spring Security's logout filter via /auth/logout.
 }

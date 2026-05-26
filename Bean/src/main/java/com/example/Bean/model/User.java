@@ -25,4 +25,8 @@ public class User extends BaseEntity {
 
     @Column(length = 50)
     private String timezone;
+
+    public CharSequence getPassword() {
+        return passwordHash;
+    }
 }

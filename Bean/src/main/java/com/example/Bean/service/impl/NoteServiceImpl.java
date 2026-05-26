@@ -44,4 +44,20 @@ public class NoteServiceImpl implements NoteService {
         note.setContent(content);
         noteRepository.save(note);
     }
+
+    @Override
+    public void togglePin(Long id) {
+        Note note = noteRepository.findById(id).orElseThrow(
+                () -> new RuntimeException("Note not found with id:" + id));
+        note.setPinned(!Boolean.TRUE.equals(note.getPinned()));
+        noteRepository.save(note);
+    }
+
+    @Override
+    public void updateColor(Long id, String color) {
+        Note note = noteRepository.findById(id).orElseThrow(
+                () -> new RuntimeException("Note not found with id:" + id));
+        note.setColor(color);
+        noteRepository.save(note);
+    }
 }

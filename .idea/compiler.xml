@@ -8,13 +8,14 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar" />
         </processorPath>
         <module name="Bean" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_STRING" value="--enable-preview" />
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="Bean" options="-parameters" />
     </option>

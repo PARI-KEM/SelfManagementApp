@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Add Task • Bean</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-layout">
+
+    <div th:replace="~{fragments/sidebar :: sidebar('tasks')}"></div>
+
+    <div class="main-content">
+        <h1 class="page-title">Add a task ✨</h1>
+        <p class="page-sub">One small step at a time.</p>
+
+        <div class="card" style="max-width:520px;">
+            <form th:action="@{/task/save}" th:object="${task}" method="post">
+
+                <label>Title</label>
+                <input type="text" class="input" th:field="*{title}" required placeholder="What do you need to do?">
+
+                <label>Description</label>
+                <textarea class="input" th:field="*{description}" rows="3" placeholder="(optional) details..."></textarea>
+
+                <label>Deadline</label>
+                <input type="datetime-local" class="input" th:field="*{dueDate}" required>
+
+                <label>Priority</label>
+                <select class="select" th:field="*{priority}">
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM" selected>Medium</option>
+                    <option value="LOW">Low</option>
+                </select>
+
+                <div style="display:flex;gap:10px;margin-top:18px;">
+                    <button type="submit" class="btn">Save task</button>
+                    <a href="/task" class="btn btn-ghost">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

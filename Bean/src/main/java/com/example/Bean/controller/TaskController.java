@@ -2,6 +2,7 @@ package com.example.Bean.controller;
 
 import com.example.Bean.dto.TaskDto;
 import com.example.Bean.model.Task;
+import com.example.Bean.security.CurrentUser;
 import com.example.Bean.service.TaskService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,38 +15,32 @@ import java.util.List;
 public class TaskController {
 
     private final TaskService taskService;
+    private final CurrentUser currentUser;
 
-    // For testing, use the existing user ID
-    private final Long userId = 1L;
-
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, CurrentUser currentUser) {
         this.taskService = taskService;
+        this.currentUser = currentUser;
     }
 
-    // Display all tasks for the user
     @GetMapping
     public String viewTasks(Model model) {
-        List<Task> tasks = taskService.getTasksByUser(userId);
+        List<Task> tasks = taskService.getTasksByUser(currentUser.requireId());
         model.addAttribute("tasks", tasks);
         return "task";
     }
 
-    // Show form to add a new task
     @GetMapping("/add")
     public String addTaskForm(Model model) {
         model.addAttribute("task", new TaskDto());
         return "addtask";
     }
 
-    // Save a new task
     @PostMapping("/save")
     public String saveTask(@ModelAttribute TaskDto taskDto) {
-        // Use hardcoded userId for now
-        taskService.createTaskFromDto(taskDto, userId);
-        return "redirect:/task"; // corrected redirect path
+        taskService.createTaskFromDto(taskDto, currentUser.requireId());
+        return "redirect:/task";
     }
 
-    // Search tasks
     @GetMapping("/search")
     public String searchTasks(
             @RequestParam(required = false) String keyword,
@@ -53,7 +48,7 @@ public class TaskController {
             @RequestParam(required = false) String status,
             Model model) {
 
-        List<Task> results = taskService.searchTasks(userId, keyword, priority, status);
+        List<Task> results = taskService.searchTasks(currentUser.requireId(), keyword, priority, status);
         model.addAttribute("tasks", results);
         return "task";
     }
@@ -63,7 +58,4 @@ public class TaskController {
         taskService.toggleComplete(id);
         return "redirect:/task";
     }
-
-
-
 }

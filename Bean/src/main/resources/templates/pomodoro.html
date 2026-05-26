@@ -2,227 +2,277 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Pomodoro Timer</title>
-
-    <style>
-        /* Full page lofi background */
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            animation: backgroundFade 20s infinite alternate;
-        }
-
-        @keyframes backgroundFade {
-            0% { filter: brightness(0.8); }
-            50% { filter: brightness(1); }
-            100% { filter: brightness(0.8); }
-        }
-
-        .container {
-            width: 500px;
-            padding: 25px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            color: #fff;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-        }
-
-        .time {
-            font-size: 80px;
-            font-weight: bold;
-            margin: 20px 0;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.6);
-        }
-
-        button {
-            padding: 10px 25px;
-            margin: 10px;
-            font-size: 18px;
-            border-radius: 10px;
-            border: 1px solid #555;
-            cursor: pointer;
-            background: rgba(0,0,0,0.3);
-            color: #fff;
-            transition: 0.3s;
-        }
-        button:hover {
-            background: rgba(0,0,0,0.6);
-        }
-
-        select {
-            padding: 8px;
-            font-size: 16px;
-            margin-top: 10px;
-            border-radius: 8px;
-        }
-
-        #thought-box {
-            margin-top: 30px;
-            padding: 15px;
-            border-radius: 15px;
-            background: rgba(0,0,0,0.4);
-            backdrop-filter: blur(5px);
-            font-style: italic;
-            font-size: 16px;
-            color: #fff;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        #status-label, #completed-count {
-            margin-top: 15px;
-        }
-    </style>
+    <title>Pomodoro • Bean</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
-
 <body>
+<div class="app-layout">
 
-<div class="container">
+    <div th:replace="~{fragments/sidebar :: sidebar('pomodoro')}"></div>
 
-    <h1>Pomodoro Timer</h1>
+    <div class="main-content">
+        <h1 class="page-title">Pomodoro 🍅</h1>
+        <p class="page-sub">Focus a little. Rest a little. You've got this.</p>
 
-    <div id="time-display" class="time">25:00</div>
+        <div class="pomo-grid">
 
-    <select id="focus-select">
-        <option value="25">25 min Focus</option>
-        <option value="50">50 min Focus</option>
-    </select>
+            <!-- LEFT: Timer card -->
+            <div class="pomo-timer-card">
+                <div class="pomo-modes">
+                    <button class="pomo-mode-btn active" data-mode="FOCUS"       data-minutes="25">Focus</button>
+                    <button class="pomo-mode-btn"        data-mode="SHORT_BREAK" data-minutes="5">Short Break</button>
+                    <button class="pomo-mode-btn"        data-mode="LONG_BREAK"  data-minutes="15">Long Break</button>
+                </div>
 
-    <select id="break-select">
-        <option value="5">5 min Break</option>
-        <option value="10">10 min Break</option>
-        <option value="15">15 min Break</option>
-    </select>
+                <div class="pomo-circle">
+                    <svg viewBox="0 0 220 220">
+                        <defs>
+                            <linearGradient id="pinkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%"  stop-color="#ff8fb1"/>
+                                <stop offset="100%" stop-color="#e75a8a"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="ring-bg" cx="110" cy="110" r="100"/>
+                        <circle class="ring-fg" cx="110" cy="110" r="100"
+                                stroke-dasharray="628.318" stroke-dashoffset="0"/>
+                    </svg>
+                    <div class="pomo-time" id="pomo-time">25:00</div>
+                    <div class="pomo-time-label" id="pomo-label">Focus</div>
+                </div>
 
-    <br>
+                <div class="pomo-controls">
+                    <button class="btn btn-lg" id="btn-start">▶  Start</button>
+                    <button class="btn btn-outline btn-lg" id="btn-pause" disabled>⏸  Pause</button>
+                    <button class="btn btn-ghost btn-lg" id="btn-reset">⟲  Reset</button>
+                </div>
 
-    <button onclick="startTimer()">Start</button>
-    <button onclick="resetTimer()">End</button>
+                <div class="pomo-quote" th:if="${thoughtOfDay}">
+                    <span class="quote-mark">❝</span>
+                    <span th:text="${thoughtOfDay}">Stay positive!</span>
+                </div>
+            </div>
 
-    <h3 id="status-label">Status: Waiting</h3>
+            <!-- RIGHT: Side cards -->
+            <div class="pomo-sidecards">
 
-    <h3>
-        Completed Today:
-        <span id="completed-count">0</span>
-    </h3>
+                <div class="card">
+                    <div class="card-title">🌸 Today's focus</div>
+                    <div class="session-count-big" id="today-count" th:text="${todayCount}">0</div>
+                    <div class="session-count-label">sessions completed</div>
+                </div>
 
-    <!-- Thought of the day box -->
-    <div id="thought-box">
-        <b>Thought of the day:</b> <span id="thought-text" th:text="${thoughtOfDay}"></span>
+                <div class="card">
+                    <div class="card-title">📝 Quick note</div>
+                    <form class="quick-note-form" id="quick-note-form">
+                        <textarea class="input" id="note-content" placeholder="Jot down something while you focus..." required></textarea>
+                        <button type="submit" class="btn">Save note</button>
+                        <span id="note-feedback" style="margin-left:10px;font-size:13px;color:var(--text-soft);"></span>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">💡 Tips</div>
+                    <ul style="margin:0;padding-left:20px;color:var(--text-soft);font-size:14px;line-height:1.8;">
+                        <li>Pick one task before you start.</li>
+                        <li>Phone face-down, notifications off.</li>
+                        <li>After 4 focus rounds, take a long break.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<script>
-    const userId = [[${userId}]];  // From backend
-    let isFocus = true;
-    let timer;
-    let secondsRemaining;
-    let currentSessionId = null;
+<script th:inline="javascript">
+    const RING_CIRCUMFERENCE = 2 * Math.PI * 100; // r=100
 
-    // Load completed today
-    async function loadCompletedToday() {
-        const res = await fetch(`/pomodoro/countToday?userId=${userId}`);
-        const count = await res.text();
-        document.getElementById("completed-count").textContent = count;
-    }
-    loadCompletedToday();
+    const state = {
+        mode: 'FOCUS',
+        totalSec: 25 * 60,
+        remainingSec: 25 * 60,
+        running: false,
+        intervalId: null,
+        sessionId: null,
+    };
 
-    // Timer functions
-    async function startTimer() {
-        clearInterval(timer);
+    const els = {
+        time:       document.getElementById('pomo-time'),
+        label:      document.getElementById('pomo-label'),
+        ring:       document.querySelector('.ring-fg'),
+        start:      document.getElementById('btn-start'),
+        pause:      document.getElementById('btn-pause'),
+        reset:      document.getElementById('btn-reset'),
+        modeBtns:   document.querySelectorAll('.pomo-mode-btn'),
+        todayCount: document.getElementById('today-count'),
+        noteForm:   document.getElementById('quick-note-form'),
+        noteText:   document.getElementById('note-content'),
+        noteFeed:   document.getElementById('note-feedback'),
+    };
 
-        if (isFocus) {
-            secondsRemaining = document.getElementById("focus-select").value * 60;
-            document.getElementById("status-label").innerText = "Status: Focus";
+    els.ring.setAttribute('stroke-dasharray', RING_CIRCUMFERENCE);
 
-            // start session in backend
-            const res = await fetch("/pomodoro/start", {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: `userId=${userId}&type=FOCUS`
-            });
-
-            const session = await res.json();
-            currentSessionId = session.id;
-
-        } else {
-            secondsRemaining = document.getElementById("break-select").value * 60;
-            document.getElementById("status-label").innerText = "Status: Break";
-        }
-
-        timer = setInterval(updateTimer, 1000);
+    function fmt(sec) {
+        const m = String(Math.floor(sec / 60)).padStart(2, '0');
+        const s = String(sec % 60).padStart(2, '0');
+        return `${m}:${s}`;
     }
 
-    async function updateTimer() {
-        let minutes = Math.floor(secondsRemaining / 60);
-        let seconds = secondsRemaining % 60;
+    function modeLabel(mode) {
+        return mode === 'FOCUS' ? 'Focus' : mode === 'SHORT_BREAK' ? 'Short Break' : 'Long Break';
+    }
 
-        document.getElementById("time-display").innerText =
-            `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+    function paint() {
+        els.time.textContent = fmt(state.remainingSec);
+        els.label.textContent = modeLabel(state.mode);
+        const pct = state.remainingSec / state.totalSec;
+        els.ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - pct);
+    }
 
-        secondsRemaining--;
+    function setMode(mode, minutes) {
+        stopTick();
+        state.mode = mode;
+        state.totalSec = minutes * 60;
+        state.remainingSec = state.totalSec;
+        state.sessionId = null;
+        els.start.disabled = false;
+        els.pause.disabled = true;
+        els.modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+        paint();
+    }
 
-        if (secondsRemaining < 0) {
-            clearInterval(timer);
-
-            if (isFocus) {
-                // focus ended → end session
-                await fetch("/pomodoro/end", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: "sessionId=" + currentSessionId
-                });
-                loadCompletedToday();
-
-                isFocus = false;
-                startTimer(); // Auto start break
-            } else {
-                isFocus = true;
-                startTimer(); // Auto start focus
+    function startTick() {
+        if (state.intervalId) return;
+        state.intervalId = setInterval(() => {
+            state.remainingSec--;
+            paint();
+            if (state.remainingSec <= 0) {
+                completeSession();
             }
+        }, 1000);
+    }
+
+    function stopTick() {
+        if (state.intervalId) {
+            clearInterval(state.intervalId);
+            state.intervalId = null;
         }
+        state.running = false;
     }
 
-    function resetTimer() {
-        clearInterval(timer);
-        document.getElementById("time-display").innerText = "25:00";
-        document.getElementById("status-label").innerText = "Status: Waiting";
-        isFocus = true;
-    }
-
-    // ----------------------------
-    // Fetch lofi GIF from Giphy API
-    async function setLofiBackground() {
+    async function startSession() {
         try {
-            const apiKey = "YOUR_GIPHY_API_KEY";  // Replace with your API key
-            const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=lofi+study&limit=1`);
-            const data = await res.json();
-            if (data.data.length > 0) {
-                const gifUrl = data.data[0].images.original.url;
-                document.body.style.backgroundImage = `url('${gifUrl}')`;
+            const params = new URLSearchParams({ type: state.mode });
+            const res = await fetch('/pomodoro/start?' + params.toString(), { method: 'POST' });
+            if (res.ok) {
+                const data = await res.json();
+                state.sessionId = data.id;
             }
-        } catch(e) {
-            console.log("Failed to load lofi background", e);
-        }
+        } catch (e) { console.warn('Could not record session start', e); }
     }
-    setLofiBackground();
 
+    async function endSession() {
+        if (!state.sessionId) return;
+        try {
+            const params = new URLSearchParams({ sessionId: state.sessionId });
+            await fetch('/pomodoro/end?' + params.toString(), { method: 'POST' });
+        } catch (e) { console.warn('Could not record session end', e); }
+        state.sessionId = null;
+    }
+
+    async function refreshTodayCount() {
+        try {
+            const res = await fetch('/pomodoro/countToday');
+            if (res.ok) {
+                const n = await res.json();
+                els.todayCount.textContent = n;
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    async function completeSession() {
+        stopTick();
+        await endSession();
+        await refreshTodayCount();
+        chime();
+        els.start.textContent = '▶  Start';
+        els.start.disabled = false;
+        els.pause.disabled = true;
+        // Reset display to mode's full time
+        state.remainingSec = state.totalSec;
+        paint();
+    }
+
+    function chime() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination);
+            o.type = 'sine'; o.frequency.value = 880;
+            g.gain.setValueAtTime(0.0001, ctx.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+            o.start(); o.stop(ctx.currentTime + 0.6);
+        } catch (e) {}
+    }
+
+    // Mode buttons
+    els.modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            setMode(btn.dataset.mode, parseInt(btn.dataset.minutes, 10));
+        });
+    });
+
+    // Start / Pause / Reset
+    els.start.addEventListener('click', async () => {
+        if (state.running) return;
+        if (!state.sessionId) await startSession();
+        state.running = true;
+        els.start.disabled = true;
+        els.pause.disabled = false;
+        startTick();
+    });
+
+    els.pause.addEventListener('click', () => {
+        stopTick();
+        els.start.disabled = false;
+        els.pause.disabled = true;
+        els.start.textContent = '▶  Resume';
+    });
+
+    els.reset.addEventListener('click', async () => {
+        stopTick();
+        // If a session was in progress, end it so it's not orphaned
+        if (state.sessionId) await endSession();
+        state.remainingSec = state.totalSec;
+        els.start.disabled = false;
+        els.pause.disabled = true;
+        els.start.textContent = '▶  Start';
+        paint();
+    });
+
+    // Quick note form
+    els.noteForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const content = els.noteText.value.trim();
+        if (!content) return;
+        try {
+            const fd = new FormData();
+            fd.append('content', content);
+            const res = await fetch('/notes/add', { method: 'POST', body: fd });
+            if (res.ok || res.redirected) {
+                els.noteText.value = '';
+                els.noteFeed.textContent = '✓ saved';
+                setTimeout(() => els.noteFeed.textContent = '', 2500);
+            } else {
+                els.noteFeed.textContent = 'could not save';
+            }
+        } catch (err) {
+            els.noteFeed.textContent = 'network error';
+        }
+    });
+
+    paint();
 </script>
-
 </body>
 </html>
